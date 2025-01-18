@@ -5,45 +5,87 @@ import numpy as np
 
 from .node import NIRNode
 
-
+@dataclass(eq=False)
 class SPICENet(NIRNode):
     """SPICEnet
     
     This is a network of N-SPICEnet SOMs of the same neuron length M.
     
     Assumes input of shape (N,).
-    Outputs one HCM matrix for each SOM pair and each matrix having shape (M, M).
+    Has one HCM matrix for each SOM pair and each matrix having shape (M, M).
     """
     
     soms: Dict[str, "SPICEnetSOM"] # Named SOMs to name HCM combinations
+    hcms: Dict[str, "SPICEnetHCM"] # Named HCM combinations
     input_type: Optional[Dict[str, np.ndarray]] = None
     output_type: Optional[Dict[str, np.ndarray]] = None
     
     def __post_init__(self):
+        # Dont allow "_" in keys
+        assert all("_" not in key for key in self.soms.keys())
+        
         # Assert that each SOM has the same number of neurons
-        assert len(set([len(som.neurons) for som in self.soms.values()])) == 1
+        soms_value_list = list(self.soms.values())
+        assert len(set([len(som.neurons) for som in soms_value_list])) == 1
         
         # Assert that at least two SOMs are present
-        assert len(self.soms.values()) >= 2
+        assert len(soms_value_list) >= 2
         
         self.input_type = {
-            "input": np.array([0] * len(self.soms.values()))
+            "input": np.array(())
+        }
+        self.output_type = {
+            "output": np.array(())
         }
         
-        n_neurons = len(self.soms.values()[0].neurons)
-        possible_som_pairs = (len(self.soms.values()) * (len(self.soms.values()) - 1)) / 2
-        self.output_type = {
-            "output": np.array([[[0] * n_neurons] * n_neurons] * possible_som_pairs)
-        }
+        # Get all possible combinations of SOMs
+        som_combos = []
+        som_keys_list = list(self.soms.keys())
+        for key in range(0, len(som_keys_list)):
+            for key2 in range(key + 1, len(som_keys_list)):
+                som_combos.append((key, key2))
+                
+        # Assert that the number of HCMs is equal to the number of SOM combinations
+        assert len(som_combos) == len(self.hcms)
+        
+        # Assert that each HCMs shape fits the SOMs
+        for combo in som_combos:
+            # Also allow "flipped" HCMs
+            som_1_neuron_len = len(self.soms[som_keys_list[combo[0]]].neurons)
+            som_2_neuron_len = len(self.soms[som_keys_list[combo[1]]].neurons)
+            assert self.hcms[f"{combo[0]}_{combo[1]}"].weights.shape == (som_1_neuron_len, som_2_neuron_len) or self.hcms[f"{combo[1]}_{combo[0]}"].weights.shape == (som_2_neuron_len, som_1_neuron_len)
+            assert som_1_neuron_len == som_2_neuron_len
         
     @staticmethod
-    def from_list(*soms: "SPICEnetSOM") -> "SPICENet":        
+    def from_lists(*soms: "SPICEnetSOM") -> "SPICENet":        
         if len(soms) > 0 and (
                 isinstance(soms[0], list) or isinstance(soms[0], tuple)
             ):
                 soms = [*soms[0]]
         
         return SPICENet(soms={f"{i}": som for i, som in enumerate(soms)})
+
+@dataclass(eq=False)
+class SPICEnetHCM(NIRNode):
+    """SPICEnet HCM
+    
+    This represents a hebbian correlation matrix between 2 SOMs.
+    It needs to be NxN in size where N is the number of neurons in the SOM.
+    
+    Does not take active inputs or outputs outside of fitting and decoding.
+    """
+    
+    weights: np.ndarray
+    input_type: Optional[Dict[str, np.ndarray]] = None
+    output_type: Optional[Dict[str, np.ndarray]] = None
+    
+    def __post_init__(self):
+        self.input_type = {
+            "input": np.array(()) # np.array(()) is a array of size 0, Nothing
+        }
+        self.output_type = {
+            "output": np.array(())
+        }
 
 @dataclass(eq=False)
 class SPICEnetSOM(NIRNode):
@@ -88,16 +130,16 @@ class SPICEnetSOMNeuron(NIRNode):
 
     def __post_init__(self):
         # STD and mean must be scalar
-        assert self.std.shape == (1,)
-        assert self.mean.shape == (1,)
+        assert self.std.shape == ()
+        assert self.mean.shape == ()
         
         # STD must be positive
-        assert self.std > 0
+        assert self.std.item() > 0
         
         self.input_type = {
-            "input": np.array(self.std.shape)
+            "input": np.array(0)
         }
         self.output_type = {
-            "output": np.array(self.std.shape)
+            "output": np.array(0)
         }
         
