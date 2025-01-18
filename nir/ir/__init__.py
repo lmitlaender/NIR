@@ -10,7 +10,7 @@ from .pooling import AvgPool2d, SumPool2d
 from .threshold import Threshold
 from .typing import NIRNode
 
-from .spicenet import SPICENet, SPICEnetSOM, SPICEnetSOMNeuron
+from .spicenet import SPICENet, SPICEnetHCM, SPICEnetSOM, SPICEnetSOMNeuron
 
 # NIRNodes that can be (de)serialized
 __all_ir = [
@@ -44,6 +44,7 @@ __all_ir = [
     "SPICENet",
     "SPICEnetSOM",
     "SPICEnetSOMNeuron",
+    "SPICEnetHCM",
 ]
 
 
@@ -98,6 +99,7 @@ __all__ = [
     "SPICENet",
     "SPICEnetSOM",
     "SPICEnetSOMNeuron",
+    "SPICEnetHCM",
     "str2NIRNode",
     "dict2NIRNode",
 ]
