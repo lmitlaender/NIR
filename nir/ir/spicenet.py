@@ -80,6 +80,9 @@ class SPICEnetHCM(NIRNode):
     output_type: Optional[Dict[str, np.ndarray]] = None
     
     def __post_init__(self):
+        assert self.weights.ndim == 2
+        assert self.weights.shape[0] == self.weights.shape[1]
+        
         self.input_type = {
             "input": np.array(()) # np.array(()) is a array of size 0, Nothing
         }
