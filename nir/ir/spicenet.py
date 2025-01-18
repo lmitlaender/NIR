@@ -57,13 +57,13 @@ class SPICENet(NIRNode):
             assert som_1_neuron_len == som_2_neuron_len
         
     @staticmethod
-    def from_lists(*soms: "SPICEnetSOM") -> "SPICENet":        
-        if len(soms) > 0 and (
-                isinstance(soms[0], list) or isinstance(soms[0], tuple)
-            ):
-                soms = [*soms[0]]
+    def from_lists(soms: list["SPICEnetSOM"], hcms: list[tuple[int, int, "SPICEnetHCM"]]) -> "SPICENet":
         
-        return SPICENet(soms={f"{i}": som for i, som in enumerate(soms)})
+        # Create SOMs and HCMs dict
+        soms = {f"{i}": som for i, som in enumerate(soms)}
+        hcms = {f"{i1}_{i2}": hcm for i1, i2, hcm in hcms}
+        
+        return SPICENet(soms=soms, hcms=hcms)
 
 @dataclass(eq=False)
 class SPICEnetHCM(NIRNode):
