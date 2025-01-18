@@ -10,6 +10,8 @@ from .pooling import AvgPool2d, SumPool2d
 from .threshold import Threshold
 from .typing import NIRNode
 
+from .spicenet import SPICENet, SPICEnetSOM, SPICEnetSOMNeuron
+
 # NIRNodes that can be (de)serialized
 __all_ir = [
     # conv
@@ -38,6 +40,10 @@ __all_ir = [
     "SumPool2d",
     # surrogate_gradient
     "Threshold",
+    # spicenet
+    "SPICENet",
+    "SPICEnetSOM",
+    "SPICEnetSOMNeuron",
 ]
 
 
@@ -88,6 +94,10 @@ __all__ = [
     "SumPool2d",
     # surrogate_gradient
     "Threshold",
+    # spicenet
+    "SPICENet",
+    "SPICEnetSOM",
+    "SPICEnetSOMNeuron",
     "str2NIRNode",
     "dict2NIRNode",
 ]
