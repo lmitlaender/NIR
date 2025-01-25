@@ -64,7 +64,22 @@ class SPICENet(NIRNode):
         hcms = {f"{i1}_{i2}": hcm for i1, i2, hcm in hcms}
         
         return SPICENet(soms=soms, hcms=hcms)
-
+    
+    def to_dict(self):
+        ret = super().to_dict()
+        ret["soms"] = {k: v.to_dict() for k, v in self.soms.items()}
+        ret["hcms"] = {k: v.to_dict() for k, v in self.hcms.items()}
+        return ret
+    
+    @classmethod
+    def from_dict(cls, node):
+        from . import dict2NIRNode
+        
+        node["soms"] = {k: dict2NIRNode(v) for k, v in node["soms"].items()}
+        node["hcms"] = {k: dict2NIRNode(v) for k, v in node["hcms"].items()}
+        
+        return super().from_dict(node)
+        
 @dataclass(eq=False)
 class SPICEnetHCM(NIRNode):
     """SPICEnet HCM
@@ -103,6 +118,18 @@ class SPICEnetSOM(NIRNode):
     neurons: List["SPICEnetSOMNeuron"]
     input_type: Optional[Dict[str, np.ndarray]] = None
     output_type: Optional[Dict[str, np.ndarray]] = None
+    
+    def to_dict(self):
+        ret = super().to_dict()
+        ret["neurons"] = {str(k): v.to_dict() for k, v in enumerate(self.neurons)}
+        return ret
+    
+    @classmethod
+    def from_dict(cls, data):
+        from . import dict2NIRNode
+        
+        data["neurons"] = [dict2NIRNode(data["neurons"][str(i)]) for i in range(len(data["neurons"]))]
+        return super().from_dict(data)
     
     def __post_init__(self):
         self.input_type = {
