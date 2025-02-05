@@ -26,16 +26,17 @@ class SPICENet(NIRNode):
         
         # Assert that each SOM has the same number of neurons
         soms_value_list = list(self.soms.values())
+        hcms_value_list = list(self.hcms.values())
         assert len(set([len(som.neurons) for som in soms_value_list])) == 1
         
         # Assert that at least two SOMs are present
         assert len(soms_value_list) >= 2
         
         self.input_type = {
-            "input": np.array(())
+            "input": np.array([len(soms_value_list), 1])
         }
         self.output_type = {
-            "output": np.array(())
+            "output": np.array([len(hcms_value_list), hcms_value_list[0].weights.shape[0], hcms_value_list[0].weights.shape[1]])
         }
         
         # Get all possible combinations of SOMs
@@ -64,7 +65,22 @@ class SPICENet(NIRNode):
         hcms = {f"{i1}_{i2}": hcm for i1, i2, hcm in hcms}
         
         return SPICENet(soms=soms, hcms=hcms)
-
+    
+    def to_dict(self):
+        ret = super().to_dict()
+        ret["soms"] = {k: v.to_dict() for k, v in self.soms.items()}
+        ret["hcms"] = {k: v.to_dict() for k, v in self.hcms.items()}
+        return ret
+    
+    @classmethod
+    def from_dict(cls, node):
+        from . import dict2NIRNode
+        
+        node["soms"] = {k: dict2NIRNode(v) for k, v in node["soms"].items()}
+        node["hcms"] = {k: dict2NIRNode(v) for k, v in node["hcms"].items()}
+        
+        return super().from_dict(node)
+        
 @dataclass(eq=False)
 class SPICEnetHCM(NIRNode):
     """SPICEnet HCM
@@ -72,7 +88,9 @@ class SPICEnetHCM(NIRNode):
     This represents a hebbian correlation matrix between 2 SOMs.
     It needs to be NxN in size where N is the number of neurons in the SOM.
     
-    Does not take active inputs or outputs outside of fitting and decoding.
+    Decision to use the update step as the input and output as such:
+    input: (2, 2) -> winner neuron index and value for each SOM
+    output (N, N) -> updated HCM matrix
     """
     
     weights: np.ndarray
@@ -84,10 +102,10 @@ class SPICEnetHCM(NIRNode):
         assert self.weights.shape[0] == self.weights.shape[1]
         
         self.input_type = {
-            "input": np.array(()) # np.array(()) is a array of size 0, Nothing
+            "input": np.array([[0, 0] [0, 0]]) # np.array(()) is a array of size 0, Nothing
         }
         self.output_type = {
-            "output": np.array(())
+            "output": np.array(*self.weights.shape)
         }
 
 @dataclass(eq=False)
@@ -103,6 +121,18 @@ class SPICEnetSOM(NIRNode):
     neurons: List["SPICEnetSOMNeuron"]
     input_type: Optional[Dict[str, np.ndarray]] = None
     output_type: Optional[Dict[str, np.ndarray]] = None
+    
+    def to_dict(self):
+        ret = super().to_dict()
+        ret["neurons"] = {str(k): v.to_dict() for k, v in enumerate(self.neurons)}
+        return ret
+    
+    @classmethod
+    def from_dict(cls, data):
+        from . import dict2NIRNode
+        
+        data["neurons"] = [dict2NIRNode(data["neurons"][str(i)]) for i in range(len(data["neurons"]))]
+        return super().from_dict(data)
     
     def __post_init__(self):
         self.input_type = {
