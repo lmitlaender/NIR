@@ -27,7 +27,6 @@ class SPICENet(NIRNode):
         # Assert that each SOM has the same number of neurons
         soms_value_list = list(self.soms.values())
         hcms_value_list = list(self.hcms.values())
-        assert len(set([len(som.neurons) for som in soms_value_list])) == 1
         
         # Assert that at least two SOMs are present
         assert len(soms_value_list) >= 2
@@ -55,7 +54,6 @@ class SPICENet(NIRNode):
             som_1_neuron_len = len(self.soms[som_keys_list[combo[0]]].neurons)
             som_2_neuron_len = len(self.soms[som_keys_list[combo[1]]].neurons)
             assert self.hcms[f"{combo[0]}_{combo[1]}"].weights.shape == (som_1_neuron_len, som_2_neuron_len) or self.hcms[f"{combo[1]}_{combo[0]}"].weights.shape == (som_2_neuron_len, som_1_neuron_len)
-            assert som_1_neuron_len == som_2_neuron_len
         
     @staticmethod
     def from_lists(soms: list["SPICEnetSOM"], hcms: list[tuple[int, int, "SPICEnetHCM"]]) -> "SPICENet":
@@ -86,26 +84,29 @@ class SPICEnetHCM(NIRNode):
     """SPICEnet HCM
     
     This represents a hebbian correlation matrix between 2 SOMs.
-    It needs to be NxN in size where N is the number of neurons in the SOM.
+    It needs to be NxM in size where N is the number of neurons in the first SOM and M the number of neurons in the second SOM.
     
-    Decision to use the update step as the input and output as such:
-    input: (2, 2) -> winner neuron index and value for each SOM
-    output (N, N) -> updated HCM matrix
+    We define the forward step as follows:
+    input: (2,) -> two activation vectors from the two SOMs
+    output (N, M) -> updated HCM matrix
     """
     
     weights: np.ndarray
+    activation_bar_vector_1: np.ndarray
+    activation_bar_vector_2: np.ndarray
     input_type: Optional[Dict[str, np.ndarray]] = None
     output_type: Optional[Dict[str, np.ndarray]] = None
     
     def __post_init__(self):
         assert self.weights.ndim == 2
-        assert self.weights.shape[0] == self.weights.shape[1]
+        assert self.activation_bar_vector_1.shape == (self.weights.shape[0],)
+        assert self.activation_bar_vector_2.shape == (self.weights.shape[1],)
         
         self.input_type = {
-            "input": np.array([[0, 0] [0, 0]]) # np.array(()) is a array of size 0, Nothing
+            "input": np.array((2,))
         }
         self.output_type = {
-            "output": np.array(*self.weights.shape)
+            "output": np.array(self.weights.shape)
         }
 
 @dataclass(eq=False)
