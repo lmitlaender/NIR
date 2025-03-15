@@ -19,6 +19,7 @@ class SPICENet(NIRNode):
     hcms: Dict[str, "SPICEnetHCM"] # Named HCM combinations
     input_type: Optional[Dict[str, np.ndarray]] = None
     output_type: Optional[Dict[str, np.ndarray]] = None
+    metadata: Dict[str, Any] = field(default_factory=dict)
     
     def __post_init__(self):
         # Dont allow "_" in keys
@@ -96,6 +97,7 @@ class SPICEnetHCM(NIRNode):
     activation_bar_vector_2: np.ndarray
     input_type: Optional[Dict[str, np.ndarray]] = None
     output_type: Optional[Dict[str, np.ndarray]] = None
+    metadata: Dict[str, Any] = field(default_factory=dict)
     
     def __post_init__(self):
         assert self.weights.ndim == 2
@@ -122,6 +124,7 @@ class SPICEnetSOM(NIRNode):
     neurons: List["SPICEnetSOMNeuron"]
     input_type: Optional[Dict[str, np.ndarray]] = None
     output_type: Optional[Dict[str, np.ndarray]] = None
+    metadata: Dict[str, Any] = field(default_factory=dict)
     
     def to_dict(self):
         ret = super().to_dict()
