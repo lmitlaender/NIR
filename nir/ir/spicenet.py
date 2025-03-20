@@ -54,11 +54,13 @@ class SPICENet(NIRNode):
             # Also allow "flipped" HCMs
             som_1_neuron_len = len(self.soms[som_keys_list[combo[0]]].neurons)
             som_2_neuron_len = len(self.soms[som_keys_list[combo[1]]].neurons)
-            assert self.hcms[f"{combo[0]}_{combo[1]}"].weights.shape == (som_1_neuron_len, som_2_neuron_len) or self.hcms[f"{combo[1]}_{combo[0]}"].weights.shape == (som_2_neuron_len, som_1_neuron_len)
+            if self.hcms.get(f"{combo[0]}_{combo[1]}"):
+                assert self.hcms[f"{combo[0]}_{combo[1]}"].weights.shape == (som_2_neuron_len, som_1_neuron_len)
+            else:
+                assert self.hcms[f"{combo[1]}_{combo[0]}"].weights.shape == (som_1_neuron_len, som_2_neuron_len)
         
     @staticmethod
     def from_lists(soms: list["SPICEnetSOM"], hcms: list[tuple[int, int, "SPICEnetHCM"]]) -> "SPICENet":
-        
         # Create SOMs and HCMs dict
         soms = {f"{i}": som for i, som in enumerate(soms)}
         hcms = {f"{i1}_{i2}": hcm for i1, i2, hcm in hcms}
